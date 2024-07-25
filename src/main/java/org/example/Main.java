@@ -11,11 +11,11 @@ import java.util.Optional;
 public class Main {
     public static void main(String[] args) throws IOException {
         // dossier que vous voulez updater (susceptible de ne pas marcher avec les path directement sous repository)
-        var pathRepositoryToExplore = "C:/Users/a926932/.m2/repository_sae";
+        var pathRepositoryToExplore = "C:\\Users\\a926932\\.m2\\repository_sae\\com\\mediacert\\common\\mediacert-common-jdk1.6";
         // dosser racine du repository
         var pathRepositoryRoot = "C:/Users/a926932/.m2/repository_sae";
         // dossier cible (a créer) où copier les jar et pom avant de les upload (nécessaire car la commande maven va extraire le pom des jar)
-        var pathDirectoryLibToUpload = "C:/Users/a926932/.m2/flat_lib_test";
+        var pathDirectoryLibToUpload = "C:/Users/a926932/.m2/repository_source_sae";
 
         Path startPath = Paths.get(pathRepositoryToExplore);
         var data = walkFileTree(startPath);
@@ -23,7 +23,6 @@ public class Main {
         System.out.println("Voici la liste des commandes à exécuter");
         runThroughDependencies(data, pathDirectoryLibToUpload, pathRepositoryRoot);
     }
-
 
     private static void runThroughDependencies(List<DirectoryInfo> directoryInfos, String pathDirectoryLibToUpload, String pathRepositoryRoot) {
         directoryInfos.forEach(directoryInfo -> {
@@ -48,7 +47,7 @@ public class Main {
         var newPath = copyFileToDestination(STR."\{pathLibrary}/\{jar.get()}", pathDirectoryLibToUpload);
         var artifactId = getArtifactId(jar.get(), version);
         //System.out.println(STR." JAR:  \{jar.get()}");
-        var commandToExecute = buildCommand(Type.JAR, newPath.toString(), groupId, artifactId, version);
+        var commandToExecute = buildCommand(Type.jar, newPath.toString(), groupId, artifactId, version);
         System.out.println(commandToExecute);
     }
 
@@ -62,7 +61,7 @@ public class Main {
             var newPath = copyFileToDestination(STR."\{pathLibrary}/\{pom.get()}", pathDirectoryLibToUpload);
             var artifactId = getArtifactId(pom.get(), version);
             //System.out.println(STR." POM:  \{pom.get()}");
-            var commandToExecute = buildCommand(Type.POM, newPath.toString(), groupId, artifactId, version);
+            var commandToExecute = buildCommand(Type.pom, newPath.toString(), groupId, artifactId, version);
             //executeMavenPush(commandToExecute);
             System.out.println(commandToExecute);
         }
@@ -160,8 +159,8 @@ public class Main {
     }
 
     enum Type {
-        JAR("jar"),
-        POM("pom");
+        jar("jar"),
+        pom("pom");
 
         Type(String type) {
 
