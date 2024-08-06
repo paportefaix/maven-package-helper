@@ -9,22 +9,36 @@ import java.util.List;
 import java.util.Optional;
 
 public class Main {
+
+
     public static void main(String[] args) throws IOException {
-        // dossier que vous voulez updater (susceptible de ne pas marcher avec les path directement sous repository)
-        var pathRepositoryToExplore = "C:/Users/perso/.m2/repository/com";
-        // dosser racine du repository
-        var pathRepositoryRoot = "C:/Users/perso/.m2/repository";
-        // dossier cible (a créer) où copier les jar et pom avant de les upload (nécessaire car la commande maven va extraire le pom des jar)
-        var pathDirectoryLibToUpload = "C:/Users/perso/.m2/repository_sources";
+        if (args.length != 5) {
+            System.out.println("Les paramètres attendu sont les suivants:");
+            System.out.println("Premier paramètre: Dossier que vous voulez updater (exemple: C:/Users/bob/.m2/repository/com)");
+            System.out.println("Deuxième paramètre: Dosser racine du repository (exemple: C:/Users/bob/.m2/repository)");
+            System.out.println("Troisème paramètre: Dossier cible (a créer) où copier les jar et pom avant de les upload (exemple: C:/Users/bob/.m2/repository_to_upload)");
+            System.out.println("Quatrième paramètre: Repository id identifié dans settings.xml de maven (exemple: gitlab-maven)");
+            System.out.println("Cinquième paramètre: Url package registry (exemple: https://mon_gitlab/api/v4/projects/979/packages/maven)");
+            return;
+        }
+        var pathRepositoryToExplore = args[0];
+        var pathRepositoryRoot = args[1];
+        var pathDirectoryLibToUpload = args[2];
+        var repositoryId = args[3];
+        var packageRegistryUrl = args[4];
 
         Path startPath = Paths.get(pathRepositoryToExplore);
         var data = walkFileTree(startPath);
 
         System.out.println("Voici la liste des commandes à exécuter");
-        runThroughDependencies(data, pathDirectoryLibToUpload, pathRepositoryRoot);
+        runThroughDependencies(data, pathDirectoryLibToUpload, pathRepositoryRoot, repositoryId, packageRegistryUrl);
     }
 
-    private static void runThroughDependencies(List<DirectoryInfo> directoryInfos, String pathDirectoryLibToUpload, String pathRepositoryRoot) {
+    private static void runThroughDependencies(List<DirectoryInfo> directoryInfos,
+                                               String pathDirectoryLibToUpload,
+                                               String pathRepositoryRoot,
+                                               String repositoryId,
+                                               String urlPackageRegistry) {
         directoryInfos.forEach(directoryInfo -> {
             var pathLibrary = directoryInfo.directoryPath;
             //System.out.println(STR."Path:  \{pathLibrary}");
@@ -36,22 +50,32 @@ public class Main {
 
 
             if (jar.isPresent()) {
-                manageJarFile(pathDirectoryLibToUpload, pathLibrary, jar, version, groupId);
+                manageJarFile(pathDirectoryLibToUpload, pathLibrary, jar, version, groupId, repositoryId, urlPackageRegistry);
             } else {
-                managePomFile(pathDirectoryLibToUpload, directoryInfo, version, pathLibrary, groupId);
+                managePomFile(pathDirectoryLibToUpload, directoryInfo, version, pathLibrary, groupId, repositoryId, urlPackageRegistry);
             }
         });
     }
 
-    private static void manageJarFile(String pathDirectoryLibToUpload, String pathLibrary, Optional<String> jar, String version, String groupId) {
+    private static void manageJarFile(String pathDirectoryLibToUpload,
+                                      String pathLibrary, Optional<String> jar,
+                                      String version, String groupId,
+                                      String repositoryId,
+                                      String urlPackageRegistry) {
         var newPath = copyFileToDestination(STR."\{pathLibrary}/\{jar.get()}", pathDirectoryLibToUpload);
         var artifactId = getArtifactId(jar.get(), version);
         //System.out.println(STR." JAR:  \{jar.get()}");
-        var commandToExecute = buildCommand(Type.jar, newPath.toString(), groupId, artifactId, version);
+        var commandToExecute = buildCommand(Type.jar, newPath.toString(), groupId, artifactId, version, repositoryId, urlPackageRegistry);
         System.out.println(commandToExecute);
     }
 
-    private static void managePomFile(String pathDirectoryLibToUpload, DirectoryInfo directoryInfo, String version, String pathLibrary, String groupId) {
+    private static void managePomFile(String pathDirectoryLibToUpload,
+                                      DirectoryInfo directoryInfo,
+                                      String version,
+                                      String pathLibrary,
+                                      String groupId,
+                                      String repositoryId,
+                                      String urlPackageRegistry) {
         var pom = filterUnwantedPomFiles(directoryInfo.pomFiles, version);
 
         if (pom.isEmpty()) {
@@ -61,7 +85,7 @@ public class Main {
             var newPath = copyFileToDestination(STR."\{pathLibrary}/\{pom.get()}", pathDirectoryLibToUpload);
             var artifactId = getArtifactId(pom.get(), version);
             //System.out.println(STR." POM:  \{pom.get()}");
-            var commandToExecute = buildCommand(Type.pom, newPath.toString(), groupId, artifactId, version);
+            var commandToExecute = buildCommand(Type.pom, newPath.toString(), groupId, artifactId, version, repositoryId, urlPackageRegistry);
             //executeMavenPush(commandToExecute);
             System.out.println(commandToExecute);
         }
@@ -110,8 +134,14 @@ public class Main {
         return groupId;
     }
 
-    private static String buildCommand(Type type, String filePath, String groupId, String artifactId, String version) {
-        return STR."mvn deploy:deploy-file -Dfile=\{filePath} -DgroupId=\{groupId} -DartifactId=\{artifactId} -Dversion=\{version} -Dpackaging=\{type.name()} -DrepositoryId=gitlab-maven -Durl=https://gitlab.apps.cne1opsin1clu01.cnam-ens.atos.net/api/v4/projects/979/packages/maven";
+    private static String buildCommand(Type type,
+                                       String filePath,
+                                       String groupId,
+                                       String artifactId,
+                                       String version,
+                                       String repositoryId,
+                                       String urlPackageRegistry) {
+        return STR."mvn deploy:deploy-file -Dfile=\{filePath} -DgroupId=\{groupId} -DartifactId=\{artifactId} -Dversion=\{version} -Dpackaging=\{type.name()} -DrepositoryId=\{repositoryId} -Durl=\{urlPackageRegistry}";
     }
 
     private static List<DirectoryInfo> walkFileTree(Path startPath) throws IOException {
