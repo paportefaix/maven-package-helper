@@ -11,11 +11,11 @@ import java.util.Optional;
 public class Main {
     public static void main(String[] args) throws IOException {
         // dossier que vous voulez updater (susceptible de ne pas marcher avec les path directement sous repository)
-        var pathRepositoryToExplore = "C:\\Users\\a926932\\.m2\\repository_sae\\com\\mediacert\\common\\mediacert-common-jdk1.6";
+        var pathRepositoryToExplore = "C:/Users/perso/.m2/repository/com";
         // dosser racine du repository
-        var pathRepositoryRoot = "C:/Users/a926932/.m2/repository_sae";
+        var pathRepositoryRoot = "C:/Users/perso/.m2/repository";
         // dossier cible (a créer) où copier les jar et pom avant de les upload (nécessaire car la commande maven va extraire le pom des jar)
-        var pathDirectoryLibToUpload = "C:/Users/a926932/.m2/repository_source_sae";
+        var pathDirectoryLibToUpload = "C:/Users/perso/.m2/repository_sources";
 
         Path startPath = Paths.get(pathRepositoryToExplore);
         var data = walkFileTree(startPath);

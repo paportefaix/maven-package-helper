@@ -14,9 +14,9 @@ Java 22 (en preview pour le compilateur)
 Il faut modifier les valeurs des 3 premières variables dans le code selon votre choix.
 
 ```java
- var pathRepositoryToExplore = "C:/Users/a926932/.m2/repository_sae/com/worldline/edoc";
-var pathRepositoryRoot = "C:/Users/a926932/.m2/repository_sae";
-var pathDirectoryLibToUpload = "C:/Users/a926932/.m2/flat_lib_test";
+var pathRepositoryToExplore = "C:/Users/perso/.m2/repository/com/worldline/edoc";
+var pathRepositoryRoot = "C:/Users/perso/.m2/repository";
+var pathDirectoryLibToUpload = "C:/Users/perso/.m2/flat_lib";
 
 
 ```
