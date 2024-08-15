@@ -16,7 +16,7 @@ public class Main {
             System.out.println("Les paramètres attendu sont les suivants:");
             System.out.println("Premier paramètre: Dossier que vous voulez updater (exemple: C:/Users/bob/.m2/repository/com)");
             System.out.println("Deuxième paramètre: Dosser racine du repository (exemple: C:/Users/bob/.m2/repository)");
-            System.out.println("Troisème paramètre: Dossier cible (a créer) où copier les jar et pom avant de les upload (exemple: C:/Users/bob/.m2/repository_to_upload)");
+            System.out.println("Troisième paramètre: Dossier cible (a créer) où copier les jar et pom avant de les upload (exemple: C:/Users/bob/.m2/repository_to_upload)");
             System.out.println("Quatrième paramètre: Repository id identifié dans settings.xml de maven (exemple: gitlab-maven)");
             System.out.println("Cinquième paramètre: Url package registry (exemple: https://mon_gitlab/api/v4/projects/979/packages/maven)");
             return;
