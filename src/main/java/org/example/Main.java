@@ -46,11 +46,15 @@ public class Main {
             //System.out.println(STR."Version:  \{version}");
 
             var jar = filterUnwantedJarFiles(directoryInfo.jarFiles, version);
+            var war = filterUnwantedWarFiles(directoryInfo.warFiles, version);
+
             var groupId = getGroupId(pathRepositoryRoot, pathLibrary);
 
 
             if (jar.isPresent()) {
-                manageJarFile(pathDirectoryLibToUpload, pathLibrary, jar, version, groupId, repositoryId, urlPackageRegistry);
+                manageJarFile(pathDirectoryLibToUpload, pathLibrary, jar.get(), version, groupId, repositoryId, urlPackageRegistry);
+            } else if (war.isPresent()) {
+                manageWarFile(pathDirectoryLibToUpload, pathLibrary, war.get(), version, groupId, repositoryId, urlPackageRegistry);
             } else {
                 managePomFile(pathDirectoryLibToUpload, directoryInfo, version, pathLibrary, groupId, repositoryId, urlPackageRegistry);
             }
@@ -58,14 +62,26 @@ public class Main {
     }
 
     private static void manageJarFile(String pathDirectoryLibToUpload,
-                                      String pathLibrary, Optional<String> jar,
+                                      String pathLibrary, String jar,
                                       String version, String groupId,
                                       String repositoryId,
                                       String urlPackageRegistry) {
-        var newPath = copyFileToDestination(STR."\{pathLibrary}/\{jar.get()}", pathDirectoryLibToUpload);
-        var artifactId = getArtifactId(jar.get(), version);
+        var newPath = copyFileToDestination(STR."\{pathLibrary}/\{jar}", pathDirectoryLibToUpload);
+        var artifactId = getArtifactId(jar, version);
         //System.out.println(STR." JAR:  \{jar.get()}");
         var commandToExecute = buildCommand(Type.jar, newPath.toString(), groupId, artifactId, version, repositoryId, urlPackageRegistry);
+        System.out.println(commandToExecute);
+    }
+
+    private static void manageWarFile(String pathDirectoryLibToUpload,
+                                      String pathLibrary, String war,
+                                      String version, String groupId,
+                                      String repositoryId,
+                                      String urlPackageRegistry) {
+        var newPath = copyFileToDestination(STR."\{pathLibrary}/\{war}", pathDirectoryLibToUpload);
+        var artifactId = getArtifactId(war, version);
+        //System.out.println(STR." WAR:  \{war.get()}");
+        var commandToExecute = buildCommand(Type.war, newPath.toString(), groupId, artifactId, version, repositoryId, urlPackageRegistry);
         System.out.println(commandToExecute);
     }
 
@@ -107,6 +123,10 @@ public class Main {
         return files.stream().filter(file -> file.contains(STR."-\{version}.jar")).findFirst();
     }
 
+    public static Optional<String> filterUnwantedWarFiles(List<String> files, String version) {
+        return files.stream().filter(file -> file.contains(STR."-\{version}.war")).findFirst();
+    }
+
     public static Optional<String> filterUnwantedPomFiles(List<String> files, String version) {
         return files.stream().filter(file -> file.contains(STR."-\{version}.pom")).findFirst();
     }
@@ -117,7 +137,10 @@ public class Main {
     }
 
     public static String getArtifactId(String fileName, String version) {
-        return fileName.replace(STR."-\{version}", "").replace(".pom", "").replace(".jar", "");
+        return fileName.replace(STR."-\{version}", "")
+                .replace(".pom", "")
+                .replace(".jar", "")
+                .replace(".war", "");
     }
 
     public static String getGroupId(String pathRepositoryRoot, String pathLibrary) {
@@ -156,12 +179,15 @@ public class Main {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                 List<String> jarFiles = new ArrayList<>();
+                List<String> warFiles = new ArrayList<>();
                 List<String> pomFiles = new ArrayList<>();
 
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
                     for (Path entry : stream) {
                         if (entry.toString().endsWith(".jar")) {
                             jarFiles.add(entry.getFileName().toString());
+                        } else if (entry.toString().endsWith(".war")) {
+                            warFiles.add(entry.getFileName().toString());
                         } else if (entry.toString().endsWith(".pom")) {
                             pomFiles.add(entry.getFileName().toString());
                         }
@@ -170,8 +196,8 @@ public class Main {
                     e.printStackTrace();
                 }
 
-                if (!jarFiles.isEmpty() || !pomFiles.isEmpty()) {
-                    directoryInfos.add(new DirectoryInfo(dir.toAbsolutePath().toString(), jarFiles, pomFiles));
+                if (!jarFiles.isEmpty() || !pomFiles.isEmpty() || !warFiles.isEmpty()) {
+                    directoryInfos.add(new DirectoryInfo(dir.toAbsolutePath().toString(), jarFiles, warFiles, pomFiles));
                 }
 
                 return FileVisitResult.CONTINUE;
@@ -185,12 +211,14 @@ public class Main {
     public record DirectoryInfo(
             String directoryPath,
             List<String> jarFiles,
+            List<String> warFiles,
             List<String> pomFiles) {
     }
 
     enum Type {
         jar("jar"),
-        pom("pom");
+        pom("pom"),
+        war("war");
 
         Type(String type) {
 
